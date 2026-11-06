@@ -3,9 +3,16 @@
 > 每週一早上，主管信箱自動收到一份「看得懂、能決策」的營運週報 PDF。
 > 從撈資料、算指標、畫圖、寫重點到寄出，全部一鍵完成，**手動 3 小時 → 自動 3 秒**。
 
+![示範動畫：一行指令產出週報](docs/demo.gif)
+
+🎬 完整影片：[docs/demo.mp4](docs/demo.mp4)　📄 範例輸出：[docs/sample_report.pdf](docs/sample_report.pdf)（一頁 A4）
+
+<details>
+<summary>報告完整截圖</summary>
+
 ![週報截圖](docs/report_screenshot.png)
 
-📄 範例輸出：[docs/sample_report.pdf](docs/sample_report.pdf)（一頁 A4）
+</details>
 
 ---
 
