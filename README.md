@@ -51,20 +51,20 @@
 
 ```mermaid
 flowchart LR
-    A[(銷售資料<br/>CSV / Google Sheets)] --> B[loader.py<br/>讀取 + 欄位標準化]
-    B --> C[analysis.py<br/>週營收・成長率<br/>品類排行・分店異常]
-    C --> D[charts.py<br/>matplotlib 中文圖表 ×4]
-    C --> E{有 API key?}
-    E -- 有 --> F[Claude API<br/>claude-sonnet-5-5<br/>結構化 JSON 輸出]
-    E -- 沒有 / 失敗 --> G[規則式摘要<br/>備援]
-    F --> H[render.py<br/>Jinja2 一頁式 HTML]
+    A[("銷售資料<br/>CSV / Google Sheets")] --> B["loader.py<br/>讀取與欄位標準化"]
+    B --> C["analysis.py<br/>週營收、成長率<br/>品類排行、分店異常"]
+    C --> D["charts.py<br/>matplotlib 中文圖表 4 張"]
+    C --> E{"有 API key？"}
+    E -->|"有"| F["Claude API<br/>claude-sonnet-5-5<br/>結構化 JSON 輸出"]
+    E -->|"沒有或失敗"| G["規則式摘要<br/>備援"]
+    F --> H["render.py<br/>Jinja2 一頁式 HTML"]
     G --> H
     D --> H
-    H --> I[Edge / Chrome headless<br/>→ PDF]
-    I --> J[notify.py]
-    J --> K[n8n Webhook<br/>→ Gmail / Slack / LINE]
-    J --> L[SMTP Email<br/>PDF 附件]
-    S[[Windows 工作排程器<br/>GitHub Actions<br/>每週一 09:00]] -.觸發.-> B
+    H --> I["Edge / Chrome headless<br/>轉 PDF"]
+    I --> J["notify.py"]
+    J --> K["n8n Webhook<br/>Gmail / Slack / LINE"]
+    J --> L["SMTP Email<br/>PDF 附件"]
+    S["Windows 工作排程器<br/>GitHub Actions<br/>每週一 09:00"] -.->|"觸發"| B
 ```
 
 ---
@@ -74,8 +74,8 @@ flowchart LR
 需求：Python 3.10+、Windows 內建的 Microsoft Edge（或 Chrome）。
 
 ```bash
-git clone <this-repo> auto-report
-cd auto-report
+git clone https://github.com/b3879121-rgb/auto-weekly-report.git
+cd auto-weekly-report
 python -m venv .venv
 .venv\Scripts\activate          # macOS / Linux: source .venv/bin/activate
 pip install -r requirements.txt
@@ -211,7 +211,7 @@ Linux 環境沒有微軟正黑體，workflow 會自動安裝 Noto Sans CJK，圖
 ## 專案結構
 
 ```
-auto-report/
+auto-weekly-report/
 ├── run_report.py            # 一鍵入口：資料 → 分析 → 圖表 → 摘要 → HTML/PDF → 寄送
 ├── report/
 │   ├── data_gen.py          # 擬真範例資料產生器
