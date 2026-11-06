@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ company }} 營運週報 {{ p.week_start }} ~ {{ p.week_end }}</title>
+<style>
+  :root {
+    --ink: #1f2a37; --muted: #6b7280; --line: #e5e7eb; --bg: #f8fafc; --card: #ffffff;
+    --primary: #2563eb; --good: #059669; --bad: #dc2626; --warn: #d97706;
+  }
+  * { box-sizing: border-box; }
+  @page { size: A4; margin: 10mm 10mm 10mm 10mm; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", "PingFang TC", sans-serif;
+    font-size: 12.5px; line-height: 1.55;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .page { max-width: 980px; margin: 0 auto; padding: 22px 20px 28px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 14px; }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  header .meta { text-align: right; color: var(--muted); font-size: 11px; }
+  .headline { background: var(--ink); color: #fff; border-radius: 10px; padding: 10px 16px; font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+  .kpi .label { color: var(--muted); font-size: 11.5px; }
+  .kpi .value { font-size: 22px; font-weight: 800; margin: 2px 0; font-variant-numeric: tabular-nums; }
+  .kpi .delta { font-size: 11.5px; font-weight: 700; }
+  .up { color: var(--good); } .down { color: var(--bad); } .flat { color: var(--muted); }
+  .grid2 { display: grid; grid-template-columns: 1.25fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+  .card h2 { font-size: 14px; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: baseline; }
+  .card h2 .tag { font-size: 10.5px; font-weight: 400; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+  ol.highlights { margin: 0; padding-left: 20px; }
+  ol.highlights li { margin-bottom: 5px; }
+  .actions { list-style: none; margin: 0; padding: 0; }
+  .actions li { display: grid; grid-template-columns: auto 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .actions li:last-child { border-bottom: 0; }
+  .prio { font-size: 10.5px; font-weight: 700; color: #fff; border-radius: 4px; padding: 1px 6px; height: fit-content; margin-top: 2px; }
+  .prio-高 { background: var(--bad); } .prio-中 { background: var(--warn); } .prio-低 { background: var(--muted); }
+  .owner { color: var(--muted); font-size: 11px; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .charts .card { padding: 8px; }
+  .charts img { width: 100%; display: block; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 11.5px; background: var(--bg); }
+  tr.anomaly td { background: #fef2f2; }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--bad); border: 1px solid var(--bad); border-radius: 4px; padding: 0 5px; margin-left: 4px; }
+  footer { color: var(--muted); font-size: 10.5px; margin-top: 10px; display: flex; justify-content: space-between; gap: 12px; }
+  @media print {
+    body { background: #fff; }
+    .page { padding: 0; max-width: none; zoom: .8; }  /* 一頁 A4 放得下全部內容 */
+    .card, .kpi { break-inside: avoid; }
+  }
+  @media (max-width: 720px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .grid2, .charts { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; gap: 6px; }
+    header .meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>{{ company }}｜每週營運報告</h1>
+      <div class="sub">統計區間 {{ p.week_start }}（一）～ {{ p.week_end }}（日）・資料期間自 {{ p.data_start }} 起共 {{ p.weeks_in_data }} 週</div>
+    </div>
+    <div class="meta">產出時間 {{ generated_at }}<br>自動化流程：資料 → 分析 → AI 摘要 → PDF</div>
+  </header>
+
+  <div class="headline">{{ summary.headline }}</div>
+
+  <section class="kpis">
+    {% for item in kpi_cards %}
+    <div class="kpi">
+      <div class="label">{{ item.label }}</div>
+      <div class="value">{{ item.value }}</div>
+      <div class="delta {{ item.cls }}">{{ item.delta }}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>本週 5 大重點 <span class="tag">{{ summary.source }}</span></h2>
+      <ol class="highlights">
+        {% for h in summary.highlights %}<li>{{ h }}</li>{% endfor %}
+      </ol>
+    </div>
+    <div class="card">
+      <h2>建議行動</h2>
+      <ul class="actions">
+        {% for a in summary.actions %}
+        <li><span class="prio prio-{{ a.priority }}">{{ a.priority }}</span>
+            <div>{{ a.action }}<div class="owner">負責：{{ a.owner }}</div></div></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="charts">
+    <div class="card"><img src="{{ charts.trend }}" alt="近 13 週營收趨勢"></div>
+    <div class="card"><img src="{{ charts.store }}" alt="分店本週營收 vs 前 4 週平均"></div>
+    <div class="card"><img src="{{ charts.category }}" alt="品類營收本週 vs 上週"></div>
+    <div class="card"><img src="{{ charts.heatmap }}" alt="分店營收指數熱力圖"></div>
+  </section>
+
+  <section class="card">
+    <h2>分店明細 <span class="tag">異常規則：{{ facts.anomaly_rule }}</span></h2>
+    <table>
+      <thead><tr><th>分店</th><th>本週營收</th><th>週成長</th><th>vs 前 4 週平均</th></tr></thead>
+      <tbody>
+        {% for s in facts.stores %}
+        <tr class="{{ 'anomaly' if s.anomaly else '' }}">
+          <td>{{ s.store }}{% if s.anomaly %}<span class="badge">異常</span>{% endif %}</td>
+          <td>{{ "{:,}".format(s.revenue) }}</td>
+          <td class="{{ 'up' if s.wow >= 0 else 'down' }}">{{ "{:+.1%}".format(s.wow) }}</td>
+          <td class="{{ 'up' if s.vs_4w_avg >= 0 else 'down' }}">{{ "{:+.1%}".format(s.vs_4w_avg) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <span>資料來源：{{ source_name }}</span>
+    <span>本報告由 AI 自動化營運週報系統產生，數字由程式計算，摘要僅供決策參考。</span>
+  </footer>
+</div>
+</body>
+</html>

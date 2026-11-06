@@ -1,0 +1,56 @@
+# 每週一 09:00（台灣時間）自動產出週報，PDF 會上傳成 Actions Artifact，
+# 有設定 Secrets 的話也會用 Claude 寫摘要、並透過 n8n / Email 寄出。
+#
+# Repo → Settings → Secrets and variables → Actions 可設定（全部選填）：
+#   ANTHROPIC_API_KEY, REPORT_INPUT（Google Sheets 網址）, N8N_WEBHOOK_URL,
+#   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, REPORT_TO
+name: 每週營運週報
+
+on:
+  schedule:
+    - cron: "0 1 * * 1" # UTC 01:00 = 台灣時間週一 09:00
+  workflow_dispatch: # 也可以在 Actions 頁面手動執行
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: 安裝中文字型（圖表與 PDF 用）
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          rm -rf ~/.cache/matplotlib
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 產出週報
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REPORT_INPUT: ${{ secrets.REPORT_INPUT }}
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          REPORT_TO: ${{ secrets.REPORT_TO }}
+        run: |
+          # 未設定 REPORT_INPUT 時使用範例資料，並重新產生到最近一週
+          if [ -z "$REPORT_INPUT" ]; then unset REPORT_INPUT; EXTRA=--regen-sample; fi
+          python run_report.py --send $EXTRA
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report
+          path: |
+            output/*.pdf
+            output/*.html
+          retention-days: 30
